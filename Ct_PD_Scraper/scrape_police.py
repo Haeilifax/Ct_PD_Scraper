@@ -1,10 +1,12 @@
-import os
-from bs4 import BeautifulSoup
 import requests
-import argparse
 import sys
 import json
-from useful import get_file_text, clean_to_dict
+from pathlib import Path
+
+from bs4 import BeautifulSoup
+
+from .useful import get_file_text, clean_to_dict
+
 
 def login(url, session, headers = {}, log_info = {}):
     """Log into url using POST.
@@ -20,33 +22,36 @@ def login(url, session, headers = {}, log_info = {}):
         return response
 
 
-def get_headers(header_file="headersinfo.txt"):
+def get_headers(header_file=Path("headersinfo.txt")):
     file_text = get_file_text(header_file)
     headers = clean_to_dict(file_text)
     return headers
 
-def get_log_info(login_file="loginfo.txt"):
+
+def get_log_info(login_file=Path("loginfo.txt")):
     file_text = get_file_text(login_file)
     log_info = clean_to_dict(file_text)
     return log_info
+
 
 def scrape(url, session, headers = {}):
     info = session.get(url, headers=headers)
     soup = BeautifulSoup(info.content, "html.parser")
     incidents = [incident.text for incident in soup.findAll("p")]
-    #implement this when moving to date posted from date scraped
-    #date = soup.find("time").text
-    return incidents
+    date = soup.find("time").text
+    return incidents, date
 
-def main(url, header_file="headersinfo.txt", login_file="loginfo.txt"):
+
+def main(url, header_file=Path("headersinfo.txt"), login_file=Path("loginfo.txt")):
     headers = get_headers(header_file)
     log_info = get_log_info(login_file)
     with requests.Session() as session:
         login(
             "https://www.rep-am.com/login", session, headers = headers, log_info = log_info)
         incidents = scrape(url, session)
-        with open(new_file:=f"dirty_{url[-4:-1]}.json", "w") as f:
-            json.dump(incidents, f)
+        with ChangeDirManager("../data"):
+            with open(new_file:=f"dirty_{url[-4:-1]}.json", "w") as f:
+                json.dump(incidents, f)
         return new_file
 
     

@@ -1,10 +1,14 @@
-import os
 import ast
 import argparse
 import json
 import logging
 import re
-from useful import numbers, states, months
+import copy
+from pathlib import Path
+from abc import ABC
+
+from .useful import numbers, states, months, cd
+
 
 def get_cleaner(variety, **kwargs):
     if (cased:=variety.lower()) == "basic":
@@ -12,15 +16,19 @@ def get_cleaner(variety, **kwargs):
     elif cased == "testing":
         return Cleaner(**kwargs)
 
+
 def get_dirty_incident(file_name):
     if file_name.endswith(".json"):
         with open(file_name, "r") as f:
             dirty_incident = json.load(f)
-    if file_name.endswith(".txt"):
+    elif file_name.endswith(".txt"):
         with open(file_name, "r") as f:
             dirty_incident = f.read()
             dirty_incident = ast.literal_eval(dirty_incident)
+    else:
+        raise IOError("Expected .json or .txt")
     return dirty_incident
+
 
 def clean_trailing_starting(text):
     text = text.strip()
@@ -29,24 +37,24 @@ def clean_trailing_starting(text):
     text = text.strip("()")
     return text
 
-class Cleaner():
-    order = ["name", "age", "address"]
+
+class AbstractCleaner(ABC):
+
     def __init__(self):
         self.incidents = {}
         self.logger = logging.getLogger(__name__)
-        handler = logging.FileHandler("cleaner.log")
-        log_format = logging.Formatter(
-            "_________\n{asctime} - {name} - {levelname} - {message}\n\n",
-            style="{",
-            datefmt="%Y-%m-%d %H:%M:%S")
-        handler.setFormatter(log_format)
-        self.logger.addHandler(handler)
+        # handler = logging.FileHandler(Path("./debug/cleaner.log"))
+        # log_format = logging.Formatter(
+        #     "_________\n{asctime} - {name} - {levelname} - {message}\n\n",
+        #     style="{", datefmt="%Y-%m-%d %H:%M:%S")
+        # handler.setFormatter(log_format)
+        # self.logger.addHandler(handler)
+        self.logger.addHandler(logging.NullHandler)
 
     #refactor to make standalone?
     #refactor into multiple methods to remove if/elif/else?
     def get_arrests(self, dirty_incident):
-        arrests = []
-        arrests.extend(dirty_incident)
+        arrests = copy.copy(dirty_incident)
         # print(arrests)
         for phrase in dirty_incident:
             # print(phrase, not "," in phrase)
@@ -54,6 +62,9 @@ class Cleaner():
                 # print(f"{phrase} is skipped")
                 arrests.remove(phrase)
                 # print(arrests)
+            elif phrase.startswith("Date_posted"):
+                self.incidents["date"] = phrase[13:]
+                arrests.remove(phrase)
             elif phrase.startswith("Logged in as"):
                 # print(f"{phrase} breaks loop")
                 breaker = arrests.index(phrase)
@@ -70,6 +81,25 @@ class Cleaner():
                 arrests.remove(phrase)
                 # print(arrests)
         return arrests
+
+class Basic_Cleaner(AbstractCleaner):
+
+    def clean_incidents(self, dirty_incident):
+        arrests = self.get_arrests(dirty_incident)
+        for index, phrase in enumerate(arrests):
+            try:
+                current_arrest = phrase.split(", ", 1)
+                self.logger.debug(current_arrest)
+                self.incidents[index] = {}
+                self.incidents[index]["name"] = current_arrest[0]
+                self.incidents[index]["content"] = current_arrest[1]
+            except Exception:
+                self.logger.exception(f'\nIssue with phrase "{phrase}"')
+        return self.incidents
+
+
+class Cleaner(AbstractCleaner):
+    order = ["name", "age", "address"]
 
     def clean_incidents(self, dirty_incident):
         arrests = self.get_arrests(dirty_incident)
@@ -125,19 +155,6 @@ class Cleaner():
                 self.logger.exception(f'\nIssue with phrase "{phrase}"')
         return self.incidents
 
-class Basic_Cleaner(Cleaner):
-    def clean_incidents(self, dirty_incident):
-        try:
-            arrests = self.get_arrests(dirty_incident)
-            for index, phrase in enumerate(arrests):
-                current_arrest = phrase.split(", ", 1)
-                print(current_arrest)
-                self.incidents[index] = {}
-                self.incidents[index]["name"] = current_arrest[0]
-                self.incidents[index]["content"] = current_arrest[1]
-        except Exception:
-            self.logger.exception(f'\nIssue with phrase "{phrase}"')
-        return self.incidents
 
 def main(dirty_file):
     file_name = dirty_file.rsplit(".", 1)[0]
@@ -146,6 +163,7 @@ def main(dirty_file):
         incidents = cleaner.clean_incidents(get_dirty_incident(dirty_file))
         json.dump(incidents, f)
     return new_file
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Clean a file")
