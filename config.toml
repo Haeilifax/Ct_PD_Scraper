@@ -1,0 +1,55 @@
+# This is a TOML document
+# For more information on TOML, visit https://github.com/toml-lang/toml
+
+[project]
+name = "Ct_PD_Scraper"
+description = "Scraper which puts data from the Republican-American police blotter into a database"
+version = "0.1.0"
+updated = 2020-02-20
+author = "David A"
+
+[data]
+path = "./data"
+
+[env]
+path = "."
+
+[login]
+url = "https://www.rep-am.com/login"
+
+	[login.headers]
+	Host = "www.rep-am.com"
+	User-Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0"
+	Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+	Accept-Language = "en-US,en;q=0.5"
+	Accept-Encoding = "gzip, deflate, br"
+	Referer = "https://www.rep-am.com/login"
+	Content-Type = "application/x-www-form-urlencoded"
+	Content-Length = "109"
+	Origin = "https://www.rep-am.com"
+	DNT = "1"
+	Connection = "keep-alive"
+	Upgrade-Insecure-Requests = "1"
+	TE = "Trailers"
+
+[session]
+base_url = "https://www.rep-am.com/category/local/records/police/"
+base_pages = "1"
+
+	[session.headers]
+	Host = "www.rep-am.com"
+	User-Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0"
+	Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+	Accept-Language = "en-US,en;q=0.5"
+	Accept-Encoding = "gzip, deflate, br"
+	DNT = "1"
+	Connection = "keep-alive"
+	Upgrade-Insecure-Requests = "1"
+	TE = "Trailers"
+
+[database]
+name = "pd.db"
+inserter = "basic"
+
+[cleaning]
+cleaner = "basic"

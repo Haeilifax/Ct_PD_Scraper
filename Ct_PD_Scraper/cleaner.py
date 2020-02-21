@@ -9,6 +9,17 @@ from abc import ABC
 
 from .useful import numbers, states, months, cd
 
+logger = logging.getLogger(__name__)
+stdout_handler = logging.StreamHandler()
+stdout_handler.setLevel("WARNING")
+log_format = logging.Formatter(
+    "{asctime} : {levelname} : {name} : {message}",
+    style="{"
+    )
+stdout_handler.setFormatter(log_format)
+logger.addHandler(logging.NullHandler)
+logger.addHandler(stdout_handler)
+
 
 def get_cleaner(variety, **kwargs):
     if (cased:=variety.lower()) == "basic":
@@ -42,14 +53,14 @@ class AbstractCleaner(ABC):
 
     def __init__(self):
         self.incidents = {}
-        self.logger = logging.getLogger(__name__)
+
         # handler = logging.FileHandler(Path("./debug/cleaner.log"))
         # log_format = logging.Formatter(
         #     "_________\n{asctime} - {name} - {levelname} - {message}\n\n",
         #     style="{", datefmt="%Y-%m-%d %H:%M:%S")
         # handler.setFormatter(log_format)
         # self.logger.addHandler(handler)
-        self.logger.addHandler(logging.NullHandler)
+
 
     #refactor to make standalone?
     #refactor into multiple methods to remove if/elif/else?
@@ -89,15 +100,17 @@ class Basic_Cleaner(AbstractCleaner):
         for index, phrase in enumerate(arrests):
             try:
                 current_arrest = phrase.split(", ", 1)
-                self.logger.debug(current_arrest)
+                logger.debug(current_arrest)
                 self.incidents[index] = {}
                 self.incidents[index]["name"] = current_arrest[0]
                 self.incidents[index]["content"] = current_arrest[1]
             except Exception:
-                self.logger.exception(f'\nIssue with phrase "{phrase}"')
+                logger.exception(f'\nIssue with phrase "{phrase}"')
+                input("Continue...")
         return self.incidents
 
-
+#DO NOT USE
+#BROKEN
 class Cleaner(AbstractCleaner):
     order = ["name", "age", "address"]
 
@@ -113,7 +126,7 @@ class Cleaner(AbstractCleaner):
                 # Append city name to address if it's present
                 if current_arrest_dangle[0][0].isupper():
                     self.incidents[index]["address"]=", ".join([
-                        self.incidents[index]["address"], 
+                        self.incidents[index]["address"],
                         current_arrest_dangle.pop(0)
                             ])
                 clean_crimes = []
@@ -152,7 +165,7 @@ class Cleaner(AbstractCleaner):
                         clean_crimes.append(crime)
                 self.incidents[index]["crimes"] = clean_crimes
             except Exception:
-                self.logger.exception(f'\nIssue with phrase "{phrase}"')
+                logger.exception(f'\nIssue with phrase "{phrase}"')
         return self.incidents
 
 

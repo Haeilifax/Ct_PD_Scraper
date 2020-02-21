@@ -21,7 +21,7 @@ def extract_data(data_file):
         text = data_file.read_text()
         data = ast.literal_eval(text)
     elif data_file.endswith(".json"):
-        data = json.loads(data_file.read_text())    
+        data = json.loads(data_file.read_text())
     else:
         raise TypeError("Expected file of type .txt or .json")
     return data
@@ -78,13 +78,14 @@ class Basic_Inserter(AbstractInserter):
             "first_name" : first_name,
             "last_name" : last_name
         }
+        print(values)
         cur.execute(sql, values)
         self.p_id = cur.lastrowid
 
     def _insert_content(self, content, pdcity="Unknown", date="Unknown"):
         cur = self.conn.cursor()
         sql = """
-        INSERT INTO content (person_id, content, date, pdcity) 
+        INSERT INTO content (person_id, content, date, pdcity)
         VALUES (:person_id, :content, :date, :pdcity)
         """
         values = {
@@ -96,19 +97,20 @@ class Basic_Inserter(AbstractInserter):
         print(values)
         cur.execute(sql, values)
 
-    def insert(self, data, date=None):
+    def insert(self, data, date=None, pdcity=None):
         if not self.conn:
             raise Exception("Connect to a database")
         if not date:
             date = data.get("date", "Unknown")
-        pdcity = data.get("pd_city", "Unknown")
+        if not pdcity:
+            pdcity = data.get("pd_city", "Unknown")
         for _, arrest in data.items():
             #print(_, arrest)
             if _ == "pd_city":
-                print(f"we have city, {arrest}")
+                # print(f"we have city, {arrest}")
                 continue
             if _ == "date":
-                print(f"We have date, {date}")
+                # print(f"We have date, {date}")
                 continue
             full_name = arrest["name"].split()
             first_name = " ".join(full_name[:-1])
@@ -123,10 +125,10 @@ class Basic_Inserter(AbstractInserter):
         self.date = get_date(data_file)
         data = extract_data(data_file)
         self.insert(data, self.date)
-        
+
 
 #needs to be made more modular
-#non-functional
+#NON-FUNCTIONAL
 class Inserter(AbstractInserter):
     def __init__(self, database):
         super().__init__(self, database)
@@ -136,14 +138,14 @@ class Inserter(AbstractInserter):
     def _insert_person(self, first, last, age, st_add, city):
         cur = self.conn.cursor()
         sql = """
-                INSERT INTO 
+                INSERT INTO
                 scrape_person (first_name, last_name, age, street_address, city) VALUES (:first, :last, :age, :st_add, :city)
                 """
         values = {
-            "first": first, 
-            "last": last, 
-            "age": age, 
-            "st_add": st_add, 
+            "first": first,
+            "last": last,
+            "age": age,
+            "st_add": st_add,
             "city": city
             }
         cur.execute(sql, values)
@@ -166,7 +168,7 @@ class Inserter(AbstractInserter):
         cur = self.conn.cursor()
         sql = """
         INSERT INTO
-        scrape_arrest (location, date, person_id) 
+        scrape_arrest (location, date, person_id)
         VALUES (:location, :date, :p_id)
         """
         values = {
@@ -180,8 +182,8 @@ class Inserter(AbstractInserter):
     def _insert_count_crime(self, index):
         cur = self.conn.cursor()
         sql = """
-        INSERT INTO 
-        scrape_crime_count (count, crime_id, person_id, arrest_id_id) 
+        INSERT INTO
+        scrape_crime_count (count, crime_id, person_id, arrest_id_id)
         VALUES (:count, :c_id, :p_id, :a_id)
         """
         values = {
@@ -193,7 +195,7 @@ class Inserter(AbstractInserter):
         cur.execute(sql, values)
 
     def insert(self, data_file="clean_2019-11-13.txt"):
-        """Takes cleaned arrest file and inserts into database"""   
+        """Takes cleaned arrest file and inserts into database"""
         base_date = get_date(data_file)
         data = extract_data(data_file)
         for _, arrest in data.items():
@@ -228,3 +230,6 @@ class Inserter(AbstractInserter):
                 self._insert_count_crime(index)
         self.conn.commit()
         self.conn.close()
+
+    def insert_from_file(self, data_file):
+        pass

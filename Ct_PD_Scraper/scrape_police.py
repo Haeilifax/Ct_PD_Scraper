@@ -5,7 +5,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from .useful import get_file_text, clean_to_dict
+from .useful import get_file_text, clean_to_dict, ChangeDirManager
 
 
 def login(url, session, headers = {}, log_info = {}):
@@ -39,7 +39,8 @@ def scrape(url, session, headers = {}):
     soup = BeautifulSoup(info.content, "html.parser")
     incidents = [incident.text for incident in soup.findAll("p")]
     date = soup.find("time").text
-    return incidents, date
+    pdcity = soup.find("h1").text.split()[0]
+    return incidents, date, pdcity
 
 
 def main(url, header_file=Path("headersinfo.txt"), login_file=Path("loginfo.txt")):
@@ -54,8 +55,8 @@ def main(url, header_file=Path("headersinfo.txt"), login_file=Path("loginfo.txt"
                 json.dump(incidents, f)
         return new_file
 
-    
-if __name__ == "__main__":    
+
+if __name__ == "__main__":
     # headers = {}
     # headers = clean(get_file_text("headersinfo.txt"), "\n")
     # log_info = {}

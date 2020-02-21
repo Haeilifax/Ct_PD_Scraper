@@ -5,9 +5,10 @@ import logging
 import logging.handlers
 from _collections_abc import MutableMapping
 import datetime
-import qtoml
 import re
 import copy
+
+import qtoml
 
 numbers = [
     "zero", "one", "two", "three", "four", "five", "six", "seven"
@@ -30,8 +31,8 @@ states = [
 
 def get_file_text(file_name):
     """Get text from file.
-    
-    Gets text from given file name whether the file is specified using 
+
+    Gets text from given file name whether the file is specified using
     pathlib.Path or a path string.
     """
     if isinstance(file_name, Path):
@@ -98,10 +99,10 @@ class ChangeDirManager():
 
 
 def normalize_logger(
-                    logger, 
-                    logger_level="INFO", 
+                    logger,
+                    logger_level="INFO",
                     stdout_handler=logging.StreamHandler(),
-                    file_handler=logging.handlers.RotatingFileHandler, 
+                    file_handler=logging.handlers.RotatingFileHandler,
                     log_format=logging.Formatter(
                         "{asctime} : {levelname} : {name} : {message}",
                         style="{"
@@ -110,7 +111,7 @@ def normalize_logger(
     ):
     """Formats logger to the standard I personally use"""
     for handle in logger.handlers:
-        logger.removeHandler(handle)    
+        logger.removeHandler(handle)
     logger.setLevel(logger_level)
 
     if not stdout_handler.formatter:
@@ -140,8 +141,8 @@ class TOML(dict):
     is accessible through dot notation (as in a TOML document) and allows for
     cleaner .get() notation. Attributes whose names collide with reserved
     functions are modified to start with an additional underscore. Accessing
-    quoted TOML keys must be done through .get() or slicing[]. This class 
-    subclasses dict (instead of MutableMapping) in order to be read by certain 
+    quoted TOML keys must be done through .get(), slicing[], or getattr(). This class
+    subclasses dict (instead of MutableMapping) in order to be read by certain
     TOML encoders.
     """
 
@@ -238,24 +239,24 @@ class TOML(dict):
 
     def get(self, key, default=None):
         """Return value of specified key, or default if key DNE
-        
+
         Retrieves value of specified key from this (and nested) TOML object(s).
-        If key does not exist at any point, retrieves default instead. Intended
-        as comparative to dict.get()
+        If key does not exist at any point, retrieves default instead (None by
+        default). Intended as comparative to dict.get().
         """
         # pattern finds TOML keys (bare or quoted). Groups take advantage of
         # re.split returning groups it split on
         pattern = """(?:'([^']*)'(?:[.]?)|"([^"]*)"(?:[.]?)|([^.]*)(?:[.]?))"""
         splitter = re.compile(pattern)
         attributes = splitter.split(key)
-        #attributes has many None or '' entries from how re splitting works
+        # attributes has many None or '' entries from how re splitting works
         attributes = [attr for attr in attributes if attr]
         result = self
         try:
             for attribute in attributes:
                 result = getattr(result, attribute)
             return result
-        except AttributeError as e:
+        except AttributeError:
             # print(e)
             return default
 

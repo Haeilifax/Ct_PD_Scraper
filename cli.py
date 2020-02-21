@@ -9,4 +9,4 @@ if __name__ == "__main__":
         print(f"Exception found: {str(e)}")
         traceback.print_exc()
     finally:
-        input("Press any key to exit")
+        input("Press enter to exit")
