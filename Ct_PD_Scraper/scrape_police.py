@@ -5,7 +5,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from .useful import get_file_text, clean_to_dict, ChangeDirManager
+from .useful import clean_to_dict
 
 
 def login(url, session, headers = {}, log_info = {}):
@@ -23,13 +23,13 @@ def login(url, session, headers = {}, log_info = {}):
 
 
 def get_headers(header_file=Path("headersinfo.txt")):
-    file_text = get_file_text(header_file)
+    file_text = Path(header_file).read_text()
     headers = clean_to_dict(file_text)
     return headers
 
 
 def get_log_info(login_file=Path("loginfo.txt")):
-    file_text = get_file_text(login_file)
+    file_text = Path(login_file).read_text()
     log_info = clean_to_dict(file_text)
     return log_info
 
@@ -43,17 +43,17 @@ def scrape(url, session, headers = {}):
     return incidents, date, pdcity
 
 
-def main(url, header_file=Path("headersinfo.txt"), login_file=Path("loginfo.txt")):
-    headers = get_headers(header_file)
-    log_info = get_log_info(login_file)
-    with requests.Session() as session:
-        login(
-            "https://www.rep-am.com/login", session, headers = headers, log_info = log_info)
-        incidents = scrape(url, session)
-        with ChangeDirManager("../data"):
-            with open(new_file:=f"dirty_{url[-4:-1]}.json", "w") as f:
-                json.dump(incidents, f)
-        return new_file
+# def main(url, header_file=Path("headersinfo.txt"), login_file=Path("loginfo.txt")):
+#     headers = get_headers(header_file)
+#     log_info = get_log_info(login_file)
+#     with requests.Session() as session:
+#         login(
+#             "https://www.rep-am.com/login", session, headers = headers, log_info = log_info)
+#         incidents = scrape(url, session)
+#         with ChangeDirManager("../data"):
+#             with open(new_file:=f"dirty_{url[-4:-1]}.json", "w") as f:
+#                 json.dump(incidents, f)
+#         return new_file
 
 
 if __name__ == "__main__":

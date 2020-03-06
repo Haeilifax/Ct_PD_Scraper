@@ -8,8 +8,6 @@ import datetime
 import re
 import copy
 
-import qtoml
-
 numbers = [
     "zero", "one", "two", "three", "four", "five", "six", "seven"
     "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen"
@@ -109,7 +107,7 @@ def normalize_logger(
                         ),
                     log_path = Path("./debug")
     ):
-    """Formats logger to the standard I personally use"""
+    """Formats logger to the standard I personally use (deprecated)"""
     for handle in logger.handlers:
         logger.removeHandler(handle)
     logger.setLevel(logger_level)
@@ -141,9 +139,9 @@ class TOML(dict):
     is accessible through dot notation (as in a TOML document) and allows for
     cleaner .get() notation. Attributes whose names collide with reserved
     functions are modified to start with an additional underscore. Accessing
-    quoted TOML keys must be done through .get(), slicing[], or getattr(). This class
-    subclasses dict (instead of MutableMapping) in order to be read by certain
-    TOML encoders.
+    quoted TOML keys must be done through .get(), slicing[], or getattr().
+    This class subclasses dict (instead of MutableMapping) in order to be read
+    by certain TOML encoders.
     """
 
     def __init__(self, dikt):

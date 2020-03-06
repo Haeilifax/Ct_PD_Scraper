@@ -7,7 +7,7 @@ import copy
 from pathlib import Path
 from abc import ABC
 
-from .useful import numbers, states, months, cd
+from .useful import numbers, states, months
 
 logger = logging.getLogger(__name__)
 stdout_handler = logging.StreamHandler()
@@ -53,13 +53,6 @@ class AbstractCleaner(ABC):
 
     def __init__(self):
         self.incidents = {}
-
-        # handler = logging.FileHandler(Path("./debug/cleaner.log"))
-        # log_format = logging.Formatter(
-        #     "_________\n{asctime} - {name} - {levelname} - {message}\n\n",
-        #     style="{", datefmt="%Y-%m-%d %H:%M:%S")
-        # handler.setFormatter(log_format)
-        # self.logger.addHandler(handler)
 
 
     #refactor to make standalone?
