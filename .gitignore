@@ -112,3 +112,5 @@ dirty*
 junk/
 *headersinfo.txt
 loginfo.txt
+scraped_links.json
+release_demo.py
