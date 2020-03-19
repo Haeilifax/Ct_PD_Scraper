@@ -6,6 +6,10 @@ A small tool I'm developing to automatically scrape the Republican American poli
 
 In order to use this script properly, you must create a .env file in the root directory and write your login information as specified in the .env section below. Then, simply run either cli.py (if using the python interface), or PoliceScraper.exe (if using the executable interface). The rest should work automatically. This script should be run in the same location as config.toml, .env, and the data folder. By modifying the config file (using a text editor), you can change the relative paths to the data folder and .env file. Please report any bugs.
 
+## Setting up scheduled runs (Windows)
+
+Scheduled runs of this scraper can be most easily done with the .exe file. The files should be of version 0.2.0 or later, for proper behavior as a background task. Open the Task Scheduler by pressing Win+R and typing "taskschd.msc". Right-click the blank space (or click Action in the menu bar) and click on "Create New Task..." (or "Create Task"). Name the task something like "ScrapePolice", and then click the Triggers tab. Select options that make sense for you, and then click the Actions tab. Click "New...", and browse for the executable in your computer. Then, very significantly, make sure the "Start in" location is the directory which contains your config.toml file (and should also contain your .env file and data folder by default). Look through the Conditions tab and modify to your pleasing, then click the Settings tab. I would suggested ticking the "Run task as soon as possible after a scheduled start is missed" box. Then, click the "Ok" button and you should be set up to scrape daily.
+
 ### The .env file
 
 A .env file can be created by opening a text editor and writing the following, filling in any information with your relevant credentials, then saving as .env:  
@@ -32,6 +36,10 @@ One item, the relative path to the data folder from the config file. Change this
 ##### [env]
 
 As above, a single relative path to the .env file from the config file. Change this if your .env file is in a non-standard location.
+
+##### [prev_links]
+
+A single relative path from the _data folder_ to the json file which stores the already scraped links.
 
 ##### [login]
 
