@@ -8,23 +8,98 @@ import datetime
 import re
 import copy
 
+### EVERYTHING IS DEPRECATED
+
 numbers = [
-    "zero", "one", "two", "three", "four", "five", "six", "seven"
-    "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen"
-    "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"
-    ]
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven" "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen" "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+]
 months = [
-    "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
-    "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
-    ]
+    "Jan.",
+    "Feb.",
+    "Mar.",
+    "Apr.",
+    "May.",
+    "Jun.",
+    "Jul.",
+    "Aug.",
+    "Sep.",
+    "Oct.",
+    "Nov.",
+    "Dec.",
+]
 states = [
-    "A.L.", "A.K.", "A.Z.", "A.R.", "C.A.", "C.O.", "C.T.",
-    "D.E.", "F.L.", "G.A.", "H.I.", "I.D.", "I.L.", "I.N.", "I.A.", "K.S.",
-    "K.Y.", "L.A.", "M.E.", "M.D.", "M.A.", "M.I.", "M.N.", "M.S.", "M.O.",
-    "M.T.", "N.E.", "N.V.", "N.H.", "N.J.", "N.M.", "N.Y.", "N.C.", "N.D.",
-    "O.H.", "O.K.", "O.R.", "P.A.", "R.I.", "S.C.", "S.D.", "T.N.", "T.X.",
-    "U.T.", "V.T.", "V.A.", "W.A.", "W.V.", "W.I.", "W.Y.",
-    ]
+    "A.L.",
+    "A.K.",
+    "A.Z.",
+    "A.R.",
+    "C.A.",
+    "C.O.",
+    "C.T.",
+    "D.E.",
+    "F.L.",
+    "G.A.",
+    "H.I.",
+    "I.D.",
+    "I.L.",
+    "I.N.",
+    "I.A.",
+    "K.S.",
+    "K.Y.",
+    "L.A.",
+    "M.E.",
+    "M.D.",
+    "M.A.",
+    "M.I.",
+    "M.N.",
+    "M.S.",
+    "M.O.",
+    "M.T.",
+    "N.E.",
+    "N.V.",
+    "N.H.",
+    "N.J.",
+    "N.M.",
+    "N.Y.",
+    "N.C.",
+    "N.D.",
+    "O.H.",
+    "O.K.",
+    "O.R.",
+    "P.A.",
+    "R.I.",
+    "S.C.",
+    "S.D.",
+    "T.N.",
+    "T.X.",
+    "U.T.",
+    "V.T.",
+    "V.A.",
+    "W.A.",
+    "W.V.",
+    "W.I.",
+    "W.Y.",
+]
+
+
+##### ALL FUNCTIONS ARE DEPRECATED
 
 
 def get_file_text(file_name):
@@ -38,7 +113,7 @@ def get_file_text(file_name):
         return text
     if isinstance(file_name, str):
         with open(file_name, "r") as f:
-            text=f.read()
+            text = f.read()
         return text
     else:
         raise IOError("Incorrect file name")
@@ -66,18 +141,22 @@ def cd(path):
     indent space. Changes directory, runs the function, and then changes
     back to the original directory
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             with ChangeDirManager(path):
                 result = func(*args, **kwargs)
             return result
+
         return wrapper
+
     return decorator
 
 
-class ChangeDirManager():
+class ChangeDirManager:
     """A context manager which safely changes directory and then returns"""
+
     def __init__(self, path, logger_level="DEBUG"):
         self.path = Path(path)
         self.logger = logging.getLogger(__name__)
@@ -97,16 +176,15 @@ class ChangeDirManager():
 
 
 def normalize_logger(
-                    logger,
-                    logger_level="INFO",
-                    stdout_handler=logging.StreamHandler(),
-                    file_handler=logging.handlers.RotatingFileHandler,
-                    log_format=logging.Formatter(
-                        "{asctime} : {levelname} : {name} : {message}",
-                        style="{"
-                        ),
-                    log_path = Path("./debug")
-    ):
+    logger,
+    logger_level="INFO",
+    stdout_handler=logging.StreamHandler(),
+    file_handler=logging.handlers.RotatingFileHandler,
+    log_format=logging.Formatter(
+        "{asctime} : {levelname} : {name} : {message}", style="{"
+    ),
+    log_path=Path("./debug"),
+):
     """Formats logger to the standard I personally use (deprecated)"""
     for handle in logger.handlers:
         logger.removeHandler(handle)
@@ -119,10 +197,10 @@ def normalize_logger(
 
     if isinstance(file_handler, type):
         file_handler = file_handler(
-                filename=log_path / Path(f"{logger.name}.log"),
-                maxBytes=2097152,
-                backupCount=5
-                )
+            filename=log_path / Path(f"{logger.name}.log"),
+            maxBytes=2097152,
+            backupCount=5,
+        )
     if not file_handler.formatter:
         file_handler.setFormatter(log_format)
     if file_handler.level == 0:

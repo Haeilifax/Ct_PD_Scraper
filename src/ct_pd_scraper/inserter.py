@@ -1,6 +1,5 @@
 import sqlite3
 import ast
-import sys
 import json
 import re
 
@@ -29,7 +28,7 @@ def extract_data(data_file):
 
 
 def get_inserter(variety, **kwargs):
-    if (cased:=variety.lower()) == "basic":
+    if (cased := variety.lower()) == "basic":
         return Basic_Inserter(**kwargs)
     elif cased == "testing":
         return Inserter(**kwargs)
@@ -75,10 +74,7 @@ class Basic_Inserter(AbstractInserter):
         INSERT INTO person (first_name, last_name)
         VALUES (:first_name, :last_name)
         """
-        values = {
-            "first_name" : first_name,
-            "last_name" : last_name
-        }
+        values = {"first_name": first_name, "last_name": last_name}
         print(values)
         cur.execute(sql, values)
         self.p_id = cur.lastrowid
@@ -90,10 +86,10 @@ class Basic_Inserter(AbstractInserter):
         VALUES (:person_id, :content, :date, :pdcity)
         """
         values = {
-            "person_id" : self.p_id,
-            "content" : content,
-            "date" : date,
-            "pdcity" : pdcity
+            "person_id": self.p_id,
+            "content": content,
+            "date": date,
+            "pdcity": pdcity,
         }
         print(values)
         cur.execute(sql, values)
@@ -106,7 +102,7 @@ class Basic_Inserter(AbstractInserter):
         if not pdcity:
             pdcity = data.get("pd_city", "Unknown")
         for _, arrest in data.items():
-            #print(_, arrest)
+            # print(_, arrest)
             if _ == "pd_city":
                 # print(f"we have city, {arrest}")
                 continue
@@ -121,15 +117,15 @@ class Basic_Inserter(AbstractInserter):
             self._insert_content(content, pdcity, date)
         self.conn.commit()
 
-    #needs testing
+    # needs testing
     def insert_from_file(self, data_file):
         self.date = get_date(data_file)
         data = extract_data(data_file)
         self.insert(data, self.date)
 
 
-#needs to be made more modular
-#NON-FUNCTIONAL
+# needs to be made more modular
+# NON-FUNCTIONAL
 class Inserter(AbstractInserter):
     def __init__(self, database):
         super().__init__(self, database)
@@ -147,8 +143,8 @@ class Inserter(AbstractInserter):
             "last": last,
             "age": age,
             "st_add": st_add,
-            "city": city
-            }
+            "city": city,
+        }
         cur.execute(sql, values)
         self.p_id = cur.lastrowid
 
@@ -172,11 +168,7 @@ class Inserter(AbstractInserter):
         scrape_arrest (location, date, person_id)
         VALUES (:location, :date, :p_id)
         """
-        values = {
-            "location": location,
-            "date": date,
-            "p_id": self.p_id
-            }
+        values = {"location": location, "date": date, "p_id": self.p_id}
         cur.execute(sql, values)
         self.a_id = cur.lastrowid
 
@@ -191,7 +183,7 @@ class Inserter(AbstractInserter):
             "count": self.count[index],
             "c_id": self.c_id[index],
             "p_id": self.p_id,
-            "a_id": self.a_id
+            "a_id": self.a_id,
         }
         cur.execute(sql, values)
 
@@ -204,24 +196,24 @@ class Inserter(AbstractInserter):
             if _ == "pd_city":
                 pdcity = arrest
                 continue
-            if len(full_name:= arrest["name"].split()) == 2:
+            if len(full_name := arrest["name"].split()) == 2:
                 first_name, last_name = full_name
             elif len(full_name) == 3:
-                #inserting middle_name is unimplemented currently
+                # inserting middle_name is unimplemented currently
                 first_name, middle_name, last_name = full_name
             else:
                 raise AssertionError("name of arrestee incorrect format")
             age = arrest["age"]
-            #quick sanity check
+            # quick sanity check
             assert isinstance(age, int)
-            if len(address:= arrest["address"].split(", ")) > 1:
+            if len(address := arrest["address"].split(", ")) > 1:
                 st_add = address[0]
                 city = address[1]
             else:
                 st_add = address[0]
                 city = pdcity
             self._insert_person(first_name, last_name, age, st_add, city)
-            for crime in (crimes:= arrest["crimes"]):
+            for crime in (crimes := arrest["crimes"]) :
                 self.count.append(crime[0])
                 self._insert_crime(crime[1])
             date = arrest.get("date", base_date)

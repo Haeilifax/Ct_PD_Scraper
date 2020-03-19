@@ -1,5 +1,4 @@
 from ct_pd_scraper.__main__ import main
-import sys
 import traceback
 
 if __name__ == "__main__":

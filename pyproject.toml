@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ct_pd_scraper"
-version = "0.1.0"
+version = "0.2.0"
 description = "Basic scraper designed for the Republican-American (rep-am.com) police blotter"
 authors = ["David A"]
 license = "GPL-3.0"
