@@ -1,29 +1,44 @@
+"""Data cleaner for ct_pd_scraper"""
+
 import ast
 import json
-import re
-from pathlib import Path
-import traceback
 
-# logger = logging.getLogger(__name__)
-# stdout_handler = logging.StreamHandler()
-# stdout_handler.setLevel("WARNING")
-# log_format = logging.Formatter(
-#     "{asctime} : {levelname} : {name} : {message}", style="{"
-# )
-# stdout_handler.setFormatter(log_format)
-# logger.addHandler(logging.NullHandler)
-# logger.addHandler(stdout_handler)
+
+MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
 
 
 def get_cleaner(variety, **kwargs):
+    """Factory method for returning appropriate cleaner
+
+    Args:
+        variety: currently nothing - intended as selecter flag (str)
+        **kwargs: any further arguments for the cleaner
+
+    Returns:
+        The cleaner specified
+    """
     # if (variety.lower()) == "basic":
     #     return Basic_Cleaner(**kwargs)
     # elif cased == "testing":
     #     return Cleaner(**kwargs)
-    return Basic_Cleaner(**kwargs)
+    return BasicCleaner(**kwargs)
 
 
 def get_dirty_incident(file_name):
+    """Method of getting police blotters from either text or json file"""
     if file_name.endswith(".json"):
         with open(file_name, "r") as f:
             dirty_incident = json.load(f)
@@ -37,6 +52,19 @@ def get_dirty_incident(file_name):
 
 
 def get_arrests(dirty_incidents):
+    """Extract only the arrest records from a scraped blotter
+
+    Extract only the arrest records from a scraped blotter. This technique also
+    extracts any all-caps fields (Occasionally blotters start with "POLICE
+    BLOTTER", or etc.) -- these are removed later in the process.
+
+    Args:
+        dirty_incidents: list of records from scrape_police.scrape() (list)
+
+    Returns:
+        arrests: list of non-junk records. May still contain certain
+            non-content records. (list)
+    """
     arrests = []
     for phrase in dirty_incidents:
         try:
@@ -47,11 +75,54 @@ def get_arrests(dirty_incidents):
     return arrests
 
 
-class Basic_Cleaner:
+def clean_date(natural_date):
+    """Transform a natural language date into an isoformat date
+
+    Transform a date ("March 27, 2020") into an isoformat date ("2020-3-27").
+
+    Args:
+        natural_date: a naturally written date with only cardinal numbers, not
+            ordinal numbers
+                Yes: "March 27, 2020"
+                No: "March 27th, 2020"
+
+    Returns:
+        isodate: date formatted to ISO specifications in the format
+            YYYY-MM-DD. Returns "0000-00-00" if something is wrong.
+    """
+    try:
+        *rest, year = natural_date.rsplit(", ")
+        month_str, day = rest[0].split()
+        month = str(MONTHS.index(month_str) + 1)
+        isodate = "-".join([year, month, day])
+    except Exception as e:
+        print("Date failed due to:", e)
+        isodate = "0000-00-00"
+    return isodate
+
+
+class BasicCleaner:
+    """Clean a given blotter for insertion into a database"""
+
     def __init__(self):
         self.incidents = {}
 
     def clean_incidents(self, dirty_incident):
+        """Clean given blotter
+
+        Clean a given blotter based on the first comma. Make and return a
+        dictionary with keys given by indices, and the values of those keys
+        being dictionaries containing the keys name and content. The values
+        of those keys are, respectively, the name of the arrested individual
+        and the non-name content of the arrest record.
+
+        Args:
+            dirty_incident: list of records from scrape_police.scrape() (list)
+
+        Returns:
+            self.incidents: a dictionary of cleaned records -- any malformed
+                records are removed as well.
+        """
         arrests = get_arrests(dirty_incident)
         for index, phrase in enumerate(arrests):
             current_arrest = phrase.split(", ", 1)
@@ -63,132 +134,3 @@ class Basic_Cleaner:
                 self.incidents.pop(index, None)
                 continue
         return self.incidents
-
-
-# def clean_trailing_starting(text):
-#     text = text.strip()
-#     if text.startswith("of "):
-#         text = text[3:]
-#     text = text.strip(".")
-#     text = text.strip("()")
-#     return text
-
-# class AbstractCleaner(ABC):
-#     def __init__(self):
-#         self.incidents = {}
-
-# refactor to make standalone?
-# refactor into multiple methods to remove if/elif/else?
-# def get_arrests(self, dirty_incident):
-#     arrests = copy.copy(dirty_incident)
-#     # print(arrests)
-#     for phrase in dirty_incident:
-#         # print(phrase, not "," in phrase)
-#         if phrase == "":
-#             # print(f"{phrase} is skipped")
-#             arrests.remove(phrase)
-#             # print(arrests)
-#         elif phrase.startswith("Date_posted"):
-#             self.incidents["date"] = phrase[13:]
-#             arrests.remove(phrase)
-#         elif phrase.startswith("Logged in as"):
-#             # print(f"{phrase} breaks loop")
-#             breaker = arrests.index(phrase)
-#             arrests = arrests[:breaker]
-#             # print(arrests)
-#             break
-#         elif phrase[1].islower():
-#             # print(f"{phrase} is a pd_city")
-#             self.incidents["pd_city"] = phrase.split()[0]
-#             arrests.remove(phrase)
-#             # print(arrests)
-#         elif not "," in phrase:
-#             # print(f"{phrase} is skipped")
-#             arrests.remove(phrase)
-#             # print(arrests)
-#     return arrests
-
-
-# DO NOT USE
-# BROKEN
-# class Cleaner:
-#     def __init__(self):
-#         self.incidents = {}
-
-#     order = ["name", "age", "address"]
-
-#     def clean_incidents(self, dirty_incident):
-#         arrests = get_arrests(dirty_incident)
-#         for index, phrase in enumerate(arrests):
-#             try:
-#                 print(f"{phrase} is an arrest")
-#                 current_arrest = phrase.split(", ", 3)
-#                 self.incidents[index] = {
-#                     k: v for k, v in zip(Cleaner.order, current_arrest[0:3])
-#                 }
-#                 self.incidents[index]["address"] = clean_trailing_starting(
-#                     self.incidents[index]["address"]
-#                 )
-#                 current_arrest_dangle = current_arrest[-1].split(", ")
-#                 # Append city name to address if it's present
-#                 if current_arrest_dangle[0][0].isupper():
-#                     self.incidents[index]["address"] = ", ".join(
-#                         [self.incidents[index]["address"], current_arrest_dangle.pop(0)]
-#                     )
-#                 clean_crimes = []
-#                 print(current_arrest_dangle)
-#                 for crime in current_arrest_dangle:
-#                     print(crime)
-#                     # Make this a function
-#                     # Only keeping first word of crime; this likely broke
-#                     # refactor into multiple functions
-#                     if count := re.search("counts", crime):
-#                         indexed_crime = crime.split()
-#                         indexed_crime = [
-#                             clean_trailing_starting(item) for item in indexed_crime
-#                         ]
-#                         count_index = indexed_crime.index(count.group())
-#                         number_offenses = indexed_crime[count_index - 1]
-#                         crime = re.sub(count.group(), "", crime)
-#                         crime = re.sub(number_offenses, "", crime)
-#                         crime = re.sub("[()]", "", crime)
-#                         crime = clean_trailing_starting(crime)
-#                         crime = [numbers.index(number_offenses), crime]
-#                         clean_crimes.append(crime)
-#                     elif (determinant := crime.split()[0]) in numbers:
-#                         crime = crime.split(" counts of ")
-#                         crime[0] = numbers.index(crime[0])
-#                         clean_crimes.append(crime)
-#                     elif determinant in months:
-#                         date_notes = crime.split(". ")
-#                         self.incidents[index]["date"] = " ".join(date_notes[:2])
-#                         if len(date_notes) > 2:
-#                             self.incidents[index]["notes"] = "".join(date_notes[2:])
-#                     elif (determinant := crime.split()[0]) in states:
-#                         self.incidents[index]["address"] = ", ".join(
-#                             [self.incidents[index]["address"], determinant]
-#                         )
-#                     else:
-#                         crime = [1, crime]
-#                         clean_crimes.append(crime)
-#                 self.incidents[index]["crimes"] = clean_crimes
-#             except Exception:
-#                 # logger.exception(f'\nIssue with phrase "{phrase}"')
-#                 continue
-#         return self.incidents
-
-
-# def main(dirty_file):
-#     file_name = dirty_file.rsplit(".", 1)[0]
-#     with open(new_file := f"clean_{file_name}.json", "w") as f:
-#         cleaner = Cleaner()
-#         incidents = cleaner.clean_incidents(get_dirty_incident(dirty_file))
-#         json.dump(incidents, f)
-#     return new_file
-
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="Clean a file")
-#     parser.add_argument("file", help="file path we want to clean")
-#     args = parser.parse_args()
-#     main(args.file)

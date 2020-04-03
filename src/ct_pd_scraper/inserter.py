@@ -1,20 +1,25 @@
+"""Module for inserting data into databases"""
 import sqlite3
 import ast
 import json
 import re
 
-from datetime import date
 from pathlib import Path
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+
+from ct_pd_scraper import MySQLdbAdapter as mysqldb
+from ct_pd_scraper.cleaner import clean_date
 
 
 def get_date(file_name):
+    """Obsolete method of getting date from a well-formed file-name"""
     pattern = r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}"
     date = re.search(pattern, file_name).group()
     return date
 
 
 def extract_data(data_file):
+    """Obsolete method of getting data from file"""
     if not Path(data_file).is_file():
         raise IOError("File does not exist")
     if data_file.endswith(".txt"):
@@ -27,16 +32,39 @@ def extract_data(data_file):
     return data
 
 
-def get_inserter(variety, **kwargs):
-    if (cased := variety.lower()) == "basic":
-        return Basic_Inserter(**kwargs)
-    elif cased == "testing":
-        return Inserter(**kwargs)
+def get_inserter(variety, config, **kwargs):
+    """Factory method for returning an inserter
+
+    For SQLite inserter (SQLite databases), provide the path to a valid sqlite
+    database file as the parameter "database".
+
+    For MySQL inserter (MySQL database), provide the database to connect to and
+    any necessary keyword parameters for the MySQLdb connection. Options are
+    listed in mysqlclient documentation at:
+        (https://mysqlclient.readthedocs.io/user_guide.html)
+    """
+    if (cased := variety.lower()) == "sqlite":
+        return SQLiteInserter(config, **kwargs)
+    if cased == "mysql":
+        return MySQLInserter(config, **kwargs)
+    raise TypeError("Please choose an appropriate database type")
 
 
-class AbstractInserter(ABC):
-    def __init__(self, database):
-        self.database = database
+class AbstractInserter:
+    """Abstract inserter class
+
+    Abstract inserter class containing context manager logic for opening and
+    closing a connection and methods for inserting into a given database
+    according to python's database interface.
+
+    To subclass: override __init__ and database_connect.
+    """
+
+    @abstractmethod
+    def __init__(self, config, **kwargs):
+        self.config = config
+        self.param_query_start = ""
+        self.param_query_end = ""
 
     def __enter__(self):
         self.database_connect()
@@ -45,45 +73,64 @@ class AbstractInserter(ABC):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.database_close()
 
+    @abstractmethod
     def database_connect(self):
-        if Path(self.database).is_file():
-            try:
-                conn = sqlite3.connect(self.database)
-                self.conn = conn
-            except sqlite3.Error as e:
-                print(e)
-        else:
-            raise IOError("Database not found")
+        pass
 
     def database_close(self):
         self.conn.close()
 
-    @abstractmethod
-    def insert(self, data, date=date.today()):
-        pass
-
-    @abstractmethod
-    def insert_from_file(self, data_file):
-        pass
-
-
-class Basic_Inserter(AbstractInserter):
     def _insert_name(self, first_name, last_name):
+        """Insert given first_ and last_ name into database.
+
+        Insert first_name and last_name into self.database using parameterized
+        queries. Formatted strings are used to allow inserters to specify
+        their own parameterization marks (e.g. colon before for SQLite or
+        %( before and )s after for MySQL). self.conn is not generated in
+        __init__, using this method outside of the insert method may lead to
+        unexpected behaviors.
+
+        Args:
+            first_name, last_name: first and last name to insert into database
+
+        Returns:
+            None
+            Prints values (first_name, last_name) to stdout
+            Sets self.p_id to the row id of the inserted name, for use in
+            _insert_content
+        """
         cur = self.conn.cursor()
         sql = """
         INSERT INTO person (first_name, last_name)
-        VALUES (:first_name, :last_name)
+        VALUES ({0}first_name{1}, {0}last_name{1})
         """
         values = {"first_name": first_name, "last_name": last_name}
         print(values)
-        cur.execute(sql, values)
+        cur.execute(sql.format(self.param_query_start, self.param_query_end), values)
         self.p_id = cur.lastrowid
 
     def _insert_content(self, content, pdcity="Unknown", date="Unknown"):
+        """Insert content of blotters into database
+
+        Insert content, pdcity, and date into self.database using
+        parameterized queries. Formatted strings are used as in _insert_name.
+        Using this method outside of the insert method will lead to
+        unexpected behaviors. This method relies on self.p_id from
+        _insert_name -- must only be used after it is set.
+
+        Args:
+            content: content of blotter to be inserted (str)
+            pdcity: police department which made the arrests (str)
+            date: date police blotter was posted (ISO date formatted str)
+
+        Returns:
+            None
+            Prints values (self.p_id, content, date, pdcity) to stdout
+        """
         cur = self.conn.cursor()
         sql = """
         INSERT INTO content (person_id, content, date, pdcity)
-        VALUES (:person_id, :content, :date, :pdcity)
+        VALUES ({0}person_id{1}, {0}content{1}, {0}date{1}, {0}pdcity{1})
         """
         values = {
             "person_id": self.p_id,
@@ -92,137 +139,126 @@ class Basic_Inserter(AbstractInserter):
             "pdcity": pdcity,
         }
         print(values)
-        cur.execute(sql, values)
+        cur.execute(sql.format(self.param_query_start, self.param_query_end), values)
 
     def insert(self, data, date=None, pdcity=None):
+        """Governer for inserting values into database
+
+        Master method for final cleaning of data and inserting into database.
+        Ensures that self.conn is populated before attempting to insert.
+        Ensures that data and pdcity were passed, either as arguments or
+        as keys in data, and if not, populates them with default values. Cleans
+        the date from the expected natural language format before inserting.
+
+        Args:
+            data: dictionary containing dictionaries as values for arbitrary
+                keys. Nested dictionaries should contain keys "name" and
+                "content", with string values (dict)
+            date: Natural language date on which the blotters were posted.
+                Should be of the format "Month Day, Year", e.g.
+                "March 27, 2020". Day should be cardinal (27), not ordinal
+                (27th).
+            pdcity: Name of city where arrests happened
+
+        Returns:
+            None
+            _insert_name and _insert_content print values to stdout
+        """
         if not self.conn:
             raise Exception("Connect to a database")
         if not date:
-            date = data.get("date", "Unknown")
+            date = data.get("date", "0000-00-00")
+            data.pop("date", None)
+        date = clean_date(date)
         if not pdcity:
             pdcity = data.get("pd_city", "Unknown")
-        for _, arrest in data.items():
-            # print(_, arrest)
-            if _ == "pd_city":
-                # print(f"we have city, {arrest}")
-                continue
-            if _ == "date":
-                # print(f"We have date, {date}")
-                continue
-            full_name = arrest["name"].split()
-            first_name = " ".join(full_name[:-1])
-            last_name = full_name[-1]
-            self._insert_name(first_name, last_name)
-            content = arrest["content"]
-            self._insert_content(content, pdcity, date)
-        self.conn.commit()
-
-    # needs testing
-    def insert_from_file(self, data_file):
-        self.date = get_date(data_file)
-        data = extract_data(data_file)
-        self.insert(data, self.date)
+            data.pop("pd_city", None)
+        with self.conn:
+            for _, arrest in data.items():
+                full_name = arrest["name"].split()
+                first_name = " ".join(full_name[:-1])
+                last_name = full_name[-1]
+                content = arrest["content"]
+                self._insert_name(first_name, last_name)
+                self._insert_content(content, pdcity, date)
 
 
-# needs to be made more modular
-# NON-FUNCTIONAL
-class Inserter(AbstractInserter):
-    def __init__(self, database):
-        super().__init__(self, database)
-        self.c_id = []
-        self.count = []
+class SQLiteInserter(AbstractInserter):
+    """Inserter for SQLite databases"""
 
-    def _insert_person(self, first, last, age, st_add, city):
-        cur = self.conn.cursor()
-        sql = """
-                INSERT INTO
-                scrape_person (first_name, last_name, age, street_address, city) VALUES (:first, :last, :age, :st_add, :city)
-                """
-        values = {
-            "first": first,
-            "last": last,
-            "age": age,
-            "st_add": st_add,
-            "city": city,
-        }
-        cur.execute(sql, values)
-        self.p_id = cur.lastrowid
+    def __init__(self, config, **kwargs):
+        """Initialize variables
 
-    def _insert_crime(self, name):
-        cur = self.conn.cursor()
-        exist_sql = "SELECT crime_name FROM scrape_crime WHERE crime_name = :name"
-        value = {"name": name}
-        cur.execute(exist_sql, value)
-        _crimes = cur.fetchone()
-        if _crimes:
-            self.c_id.append(_crimes[0])
+        Initialize database path based first off given kwargs, then off config
+        dict.
+
+        Args:
+            config: dictionary providing database configuration. Overridable
+                with **kwargs. (dict)
+                    Keys:
+                    "data_path": path to data folder (folder containing
+                        the database) (str or Path)
+                    "sqlite": dictionary providing configuration details for
+                        SQLite database. (dict)
+                            Keys:
+                            "database": database filename (str or Path)
+            **kwargs: provided to override config. Provide any keyname to use
+                **kwargs value instead
+        """
+        self.data_path = kwargs.get("data_path", config.get("data_path"))
+        self.config = config.get("sqlite", {}).copy()  # Avoid contaminating config
+        self.config.update(kwargs)
+        self.database = self.config.get("database")
+        self.param_query_start = ":"
+        self.param_query_end = ""
+
+    def database_connect(self):
+        """Connects to database given by configuration. Errors if file DNE
+
+        Raises:
+            IOError: The database given does not exist
+        """
+        database_path = Path(self.data_path) / Path(self.database)
+        if Path(database_path).is_file():
+            try:
+                conn = sqlite3.connect(database_path)
+                self.conn = conn
+            except sqlite3.Error as e:
+                print(e)
         else:
-            sql = "INSERT INTO scrape_crime (crime_name) VALUES (:name)"
-            cur.execute(sql, value)
-            self.c_id.append(name)
+            raise IOError("Database not found")
 
-    def _insert_arrest(self, location, date):
-        cur = self.conn.cursor()
-        sql = """
-        INSERT INTO
-        scrape_arrest (location, date, person_id)
-        VALUES (:location, :date, :p_id)
+
+class MySQLInserter(AbstractInserter):
+    """Inserter for MySQL databases"""
+
+    def __init__(self, config, **kwargs):
+        """Initialize variables
+
+        Initialize configuration of database connection variables.
+
+        Args:
+            config: dictionary with configuration values for MySQL database
+                connection under the key "mysql" (dict)
+                    Keys:
+                    "mysql": dict containing key-value pairs (dict)
+                        Keys:
+                        see:
+                        https://mysqlclient.readthedocs.io/user_guide.html
+                        for details
+                        "host", "user", "password", "database", "port",
+                        "unix_socket", "conv", "compress", "connect_timeout",
+                        "named_pipe", "init_command", "read_default_group",
+                        "cursorclass", "use_unicode", "charset", "sql_mode",
+                        "ssl"
+            **kwargs: Override any key-value in config["mysql"]
         """
-        values = {"location": location, "date": date, "p_id": self.p_id}
-        cur.execute(sql, values)
-        self.a_id = cur.lastrowid
+        self.config = config.get(
+            "mysql", {}
+        ).copy()  # Don't contaminate original config
+        self.config.update(kwargs)
+        self.param_query_start = "%("
+        self.param_query_end = ")s"
 
-    def _insert_count_crime(self, index):
-        cur = self.conn.cursor()
-        sql = """
-        INSERT INTO
-        scrape_crime_count (count, crime_id, person_id, arrest_id_id)
-        VALUES (:count, :c_id, :p_id, :a_id)
-        """
-        values = {
-            "count": self.count[index],
-            "c_id": self.c_id[index],
-            "p_id": self.p_id,
-            "a_id": self.a_id,
-        }
-        cur.execute(sql, values)
-
-    def insert(self, data_file="clean_2019-11-13.txt"):
-        """Takes cleaned arrest file and inserts into database"""
-        base_date = get_date(data_file)
-        data = extract_data(data_file)
-        for _, arrest in data.items():
-            pdcity = "Unknown"
-            if _ == "pd_city":
-                pdcity = arrest
-                continue
-            if len(full_name := arrest["name"].split()) == 2:
-                first_name, last_name = full_name
-            elif len(full_name) == 3:
-                # inserting middle_name is unimplemented currently
-                first_name, middle_name, last_name = full_name
-            else:
-                raise AssertionError("name of arrestee incorrect format")
-            age = arrest["age"]
-            # quick sanity check
-            assert isinstance(age, int)
-            if len(address := arrest["address"].split(", ")) > 1:
-                st_add = address[0]
-                city = address[1]
-            else:
-                st_add = address[0]
-                city = pdcity
-            self._insert_person(first_name, last_name, age, st_add, city)
-            for crime in (crimes := arrest["crimes"]) :
-                self.count.append(crime[0])
-                self._insert_crime(crime[1])
-            date = arrest.get("date", base_date)
-            self._insert_arrest(city, date)
-            assert len(self.count) == len(self.c_id)
-            for index in range(0, len(self.count)):
-                self._insert_count_crime(index)
-        self.conn.commit()
-        self.conn.close()
-
-    def insert_from_file(self, data_file):
-        pass
+    def database_connect(self):
+        self.conn = mysqldb.connect(**self.config)

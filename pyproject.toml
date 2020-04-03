@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ct_pd_scraper"
-version = "0.2.0"
+version = "0.3.0"
 description = "Basic scraper designed for the Republican-American (rep-am.com) police blotter"
 authors = ["David A"]
 license = "GPL-3.0"
@@ -12,6 +12,7 @@ bs4 = "^0.0.1"
 environs = "^7.2.0"
 tqdm = "^4.43.0"
 tomlkit = {git = "https://github.com/Haeilifax/tomlkit.git", branch = "master"}
+mysqlclient = "^1.4.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3.5"

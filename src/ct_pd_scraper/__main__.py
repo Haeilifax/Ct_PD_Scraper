@@ -1,8 +1,7 @@
+"""Main worker of script"""
 import json
 import re
 from time import sleep
-from pathlib import Path
-import logging
 import traceback
 
 import requests
@@ -17,6 +16,23 @@ from . import exceptions
 
 
 def get_links(session, config):
+    """Get links to blotters from the base page
+
+    Get links to police blotters on rep-am.com from the base page (default
+    value https://www.rep-am.com/category/local/records/police/). Links are
+    found using a BeautifulSoup search on every <a> tag for links which
+    contain "blotter" in their href.
+
+    Args:
+        session: the current requests.Session (Session)
+        config: a SettingsObj, usually generated off config.toml (SettingsObj)
+            Properties:
+            base_url: url to scrape links to blotters from
+            session_headers: headers to mimic a human web browser
+
+    Returns:
+        links: list of links to blotters (list)
+    """
     print(f"Getting links to blotters from {config.base_url}...")
     info = session.get(config.base_url, headers=config.session_headers)
     link_strainer = SoupStrainer("a")
@@ -27,6 +43,30 @@ def get_links(session, config):
 
 
 def main():
+    """Scrapes blotters, cleans them, and inserts data into database
+
+    This is the main method of this script. All input and modification can
+    be done through a config.toml file located in the current working
+    directory. This method creates and maintains a Session which is logged
+    into rep-am.com. Links to blotters are scraped from the main page of the
+    police news, and each blotter is then scraped for arrest records. These
+    arrest records are cleaned of junk and inserted into the given database.
+    Any errors in scraping, cleaning, or inserting are noted, and then
+    continued around. Finally, all successfully scraped links urls are saved to
+    the prev_links file to not be scraped again in the future. If no errors are
+    raised, the program then quits. If there were errors during the process,
+    the prompt remains open waiting for confirmation to close.
+
+    Returns:
+        None
+        prints multiple times during the process
+
+    Raises:
+        ct_pd_scraper.exceptions.ScraperException: an exception occurred during
+            the process. This is being raised so the prompt does not close
+            automatically
+    """
+
     config = settings.SettingsObj("config.toml")
 
     with requests.Session() as session:
@@ -46,7 +86,7 @@ def main():
             print("No new links available, exiting...")
             return
 
-        insert = inserter.get_inserter(config.inserter_type, database=config.database)
+        insert = inserter.get_inserter(config.inserter_type, config=config.connconfig)
         failed_scrapes = []
         try:
             for link in tqdm(new_links, ascii=True):

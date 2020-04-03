@@ -4,7 +4,7 @@
 [project]
 name = "Ct_PD_Scraper"
 description = "Scraper which puts data from the Republican-American police blotter into a database"
-version = "0.1.0"
+version = "0.3.0"
 updated = 2020-02-20
 author = "David A"
 
@@ -50,8 +50,46 @@ base_pages = "1"
 	TE = "Trailers"
 
 [database]
-name = "pd.db"
-inserter = "basic"
+inserter = "mysql"
+
+	[database.config.sqlite]
+		database = "pd.db"
+
+	[database.config.mysql]
+		# user =   # Uncomment to add value
+		# database =  # Uncomment to add value
+		# password =  # Uncomment to add value
+
+
+		# port = # Uncomment to add value
+		# charset = # Uncomment to add value
+		# client_flag = # Uncomment to add value
+		# connect_timeout = # Uncomment to add value
+		# autocommit = # Uncomment to add value
+		# local_infile = # Uncomment to add value
+		# defer_connect = # Uncomment to add value
+		# binary_prefix = # Uncomment to add value
+		# read_default_file =  # Uncomment to add value
+		# conv =  # Uncomment to add value
+		# host =  # Uncomment to add value
+		# unix_socket =  # Uncomment to add value
+		# sql_mode =  # Uncomment to add value
+		# use_unicode =  # Uncomment to add value
+		# ssl =  # Uncomment to add value
+		# init_command =  # Uncomment to add value
+		# read_default_group =  # Uncomment to add value
+		# compress =  # Uncomment to add value
+		# named_pipe =  # Uncomment to add value
+		# auth_plugin_map =  # Uncomment to add value
+		# read_timeout =  # Uncomment to add value
+		# write_timeout =  # Uncomment to add value
+		# bind_address =  # Uncomment to add value
+		# program_name =  # Uncomment to add value
+		# server_public_key =  # Uncomment to add value
+
+
+		# cursorclass = Cursor  # Change this with **kwargs
+		# max_allowed_packet = 16*1024*1024  # Change this with **kwargs
 
 [cleaning]
 cleaner = "basic"
