@@ -50,7 +50,7 @@ base_pages = "1"
 	TE = "Trailers"
 
 [database]
-inserter = "mysql"
+inserter = "sqlite"
 
 	[database.config.sqlite]
 		database = "pd.db"
