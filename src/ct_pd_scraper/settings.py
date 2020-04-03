@@ -1,14 +1,14 @@
 """Pre-scrape settings for ct_pd_scrape
 
 NOTE: THIS MODULE RELIES ON A FORK OF TOMLKIT, FOUND AT
-    https://github.com/Haeilifax/tomlkit.git
+    https://github.com/Haeilifax/tomlkit_fluent.git
 """
 from pathlib import Path
 import json
 
 import environs
 
-import tomlkit
+import tomlkit_fluent as tomlkit
 
 
 class SettingsObj:

@@ -127,16 +127,16 @@ description = "simplified environment variable parsing"
 name = "environs"
 optional = false
 python-versions = ">=3.5"
-version = "7.3.0"
+version = "7.3.1"
 
 [package.dependencies]
 marshmallow = ">=2.7.0"
 python-dotenv = "*"
 
 [package.extras]
-dev = ["pytest", "dj-database-url", "dj-email-url", "django-cache-url", "flake8 (3.7.9)", "flake8-bugbear (20.1.4)", "mypy (0.761)", "pre-commit (>=1.20,<3.0)", "tox"]
+dev = ["pytest", "dj-database-url", "dj-email-url", "django-cache-url", "flake8 (3.7.9)", "flake8-bugbear (20.1.4)", "mypy (0.770)", "pre-commit (>=1.20,<3.0)", "tox"]
 django = ["dj-database-url", "dj-email-url", "django-cache-url"]
-lint = ["flake8 (3.7.9)", "flake8-bugbear (20.1.4)", "mypy (0.761)", "pre-commit (>=1.20,<3.0)"]
+lint = ["flake8 (3.7.9)", "flake8-bugbear (20.1.4)", "mypy (0.770)", "pre-commit (>=1.20,<3.0)"]
 tests = ["pytest", "dj-database-url", "dj-email-url", "django-cache-url"]
 
 [[package]]
@@ -353,24 +353,23 @@ version = "0.10.0"
 
 [[package]]
 category = "main"
-description = ""
-name = "tomlkit"
+description = "Style preserving TOML library"
+name = "tomlkit-fluent"
 optional = false
 python-versions = "~2.7 || ^3.4"
 version = "0.5.11"
 
 [package.source]
-reference = "63c44f7ab85bdfa9dfac9ae4ae42139c8f96e249"
-type = "git"
-url = "https://github.com/Haeilifax/tomlkit.git"
-
+reference = ""
+type = "url"
+url = "https://github.com/Haeilifax/tomlkit_fluent/archive/master.tar.gz"
 [[package]]
 category = "main"
 description = "Fast, Extensible Progress Meter"
 name = "tqdm"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*"
-version = "4.43.0"
+version = "4.45.0"
 
 [package.extras]
 dev = ["py-make (>=0.1.0)", "twine", "argopt", "pydoc-markdown"]
@@ -402,7 +401,7 @@ description = "Measures number of Terminal column cells of wide-character codes"
 name = "wcwidth"
 optional = false
 python-versions = "*"
-version = "0.1.8"
+version = "0.1.9"
 
 [[package]]
 category = "dev"
@@ -413,7 +412,7 @@ python-versions = "*"
 version = "1.11.2"
 
 [metadata]
-content-hash = "1c56cdbdeff9cd1980917fe162e170d4338b39f041b8d55c0785695f694fd5ca"
+content-hash = "7c1e9e16934db87fe1ddaa77ec0f71391c9d8cd65517f3d07e6e4b7136ae035b"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -462,8 +461,8 @@ colorama = [
     {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
 ]
 environs = [
-    {file = "environs-7.3.0-py2.py3-none-any.whl", hash = "sha256:9578ce00ead984124a5336e5ea073707df303dc19d3b1e7ba34cdce1bb4fe02f"},
-    {file = "environs-7.3.0.tar.gz", hash = "sha256:54099cfbdd9cb320f438bf29992969ccfd5e232ba068bd650b04d76d96001631"},
+    {file = "environs-7.3.1-py2.py3-none-any.whl", hash = "sha256:9502d78a3b7ea23c211c3a88f4f946d188a7d936c59c3609f9303aeb26cdc58d"},
+    {file = "environs-7.3.1.tar.gz", hash = "sha256:68d53c4bb283d8008865815226afba83ab2ea09898e564f3399c9e73b3d4bcfd"},
 ]
 idna = [
     {file = "idna-2.9-py2.py3-none-any.whl", hash = "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"},
@@ -586,10 +585,10 @@ toml = [
     {file = "toml-0.10.0-py2.py3-none-any.whl", hash = "sha256:235682dd292d5899d361a811df37e04a8828a5b1da3115886b73cf81ebc9100e"},
     {file = "toml-0.10.0.tar.gz", hash = "sha256:229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c"},
 ]
-tomlkit = []
+tomlkit-fluent = []
 tqdm = [
-    {file = "tqdm-4.43.0-py2.py3-none-any.whl", hash = "sha256:0d8b5afb66e23d80433102e9bd8b5c8b65d34c2a2255b2de58d97bd2ea8170fd"},
-    {file = "tqdm-4.43.0.tar.gz", hash = "sha256:f35fb121bafa030bd94e74fcfd44f3c2830039a2ddef7fc87ef1c2d205237b24"},
+    {file = "tqdm-4.45.0-py2.py3-none-any.whl", hash = "sha256:ea9e3fd6bd9a37e8783d75bfc4c1faf3c6813da6bd1c3e776488b41ec683af94"},
+    {file = "tqdm-4.45.0.tar.gz", hash = "sha256:00339634a22c10a7a22476ee946bbde2dbe48d042ded784e4d88e0236eca5d81"},
 ]
 typed-ast = [
     {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:73d785a950fc82dd2a25897d525d003f6378d1cb23ab305578394694202a58c3"},
@@ -619,8 +618,8 @@ urllib3 = [
     {file = "urllib3-1.25.8.tar.gz", hash = "sha256:87716c2d2a7121198ebcb7ce7cccf6ce5e9ba539041cfbaeecfb641dc0bf6acc"},
 ]
 wcwidth = [
-    {file = "wcwidth-0.1.8-py2.py3-none-any.whl", hash = "sha256:8fd29383f539be45b20bd4df0dc29c20ba48654a41e661925e612311e9f3c603"},
-    {file = "wcwidth-0.1.8.tar.gz", hash = "sha256:f28b3e8a6483e5d49e7f8949ac1a78314e740333ae305b4ba5defd3e74fb37a8"},
+    {file = "wcwidth-0.1.9-py2.py3-none-any.whl", hash = "sha256:cafe2186b3c009a04067022ce1dcd79cb38d8d65ee4f4791b8888d6599d1bbe1"},
+    {file = "wcwidth-0.1.9.tar.gz", hash = "sha256:ee73862862a156bf77ff92b09034fc4825dd3af9cf81bc5b360668d425f3c5f1"},
 ]
 wrapt = [
     {file = "wrapt-1.11.2.tar.gz", hash = "sha256:565a021fd19419476b9362b05eeaa094178de64f8361e44468f9e9d7843901e1"},
