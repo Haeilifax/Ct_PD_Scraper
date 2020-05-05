@@ -88,8 +88,8 @@ inserter = "sqlite"
 		# server_public_key =  # Uncomment to add value
 
 
-		# cursorclass = Cursor  # Change this with **kwargs
-		# max_allowed_packet = 16*1024*1024  # Change this with **kwargs
+		# cursorclass = Cursor  # Change this with **kwargs or by modifying here
+		# max_allowed_packet = 16*1024*1024  # Change this with **kwargs or by modifying here
 
 [cleaning]
 cleaner = "basic"
